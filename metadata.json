@@ -1,0 +1,6 @@
+{
+  "name": "SmartTV Cast: Turn Normal TV into Android TV",
+  "description": "Transform any regular TV into an Android Smart TV by connecting your smartphone via USB or Cast, complete with 10-foot Leanback UI, remote control, apps, and USB media player.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
