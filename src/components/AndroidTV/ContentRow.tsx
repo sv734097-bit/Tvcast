@@ -8,13 +8,15 @@ interface ContentRowProps {
   subtitle?: string;
   items: ContentItem[];
   onSelect: (item: ContentItem) => void;
+  focusedIndex?: number | null;
 }
 
 export const ContentRow: React.FC<ContentRowProps> = ({
   title,
   subtitle,
   items,
-  onSelect
+  onSelect,
+  focusedIndex
 }) => {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -63,16 +65,22 @@ export const ContentRow: React.FC<ContentRowProps> = ({
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar scroll-smooth snap-x"
       >
-        {items.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => {
-              tvAudio.playSelect();
-              onSelect(item);
-            }}
-            onMouseEnter={() => tvAudio.playNav()}
-            className="group shrink-0 w-64 md:w-72 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-600 overflow-hidden cursor-pointer snap-start transition-all duration-200 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60 tv-card-focus"
-          >
+        {items.map((item, idx) => {
+          const isFocused = focusedIndex === idx;
+          return (
+            <div
+              key={item.id}
+              onClick={() => {
+                tvAudio.playSelect();
+                onSelect(item);
+              }}
+              onMouseEnter={() => tvAudio.playNav()}
+              className={`group shrink-0 w-64 md:w-72 rounded-2xl bg-slate-900/90 border overflow-hidden cursor-pointer snap-start transition-all duration-200 tv-card-focus ${
+                isFocused
+                  ? 'ring-4 ring-cyan-400 border-cyan-400 scale-105 shadow-[0_0_35px_rgba(34,211,238,0.7)] z-20 bg-slate-850'
+                  : 'border-slate-800 hover:border-slate-600 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60'
+              }`}
+            >
             {/* Card Thumbnail / Poster Art */}
             <div className={`relative h-36 md:h-40 bg-gradient-to-br ${item.thumbnailGradient} flex items-center justify-center overflow-hidden`}>
               
@@ -121,7 +129,8 @@ export const ContentRow: React.FC<ContentRowProps> = ({
               </p>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

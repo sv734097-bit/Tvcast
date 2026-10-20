@@ -89,6 +89,16 @@ export const TV_APPS: TVApp[] = [
     description: 'Browse and install 10,000+ Android TV applications and games.',
   },
   {
+    id: 'browser',
+    name: 'Chrome TV Browser',
+    category: 'utility',
+    icon: 'Globe',
+    bgGradient: 'from-blue-600 via-cyan-600 to-indigo-950',
+    accentColor: '#38BDF8',
+    description: 'Browse the open web, news sites, Wikipedia, and search on TV screen.',
+    badge: 'Web'
+  },
+  {
     id: 'settings',
     name: 'TV Settings',
     category: 'utility',

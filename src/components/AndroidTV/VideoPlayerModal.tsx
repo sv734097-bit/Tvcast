@@ -29,10 +29,34 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [showUnmutePrompt, setShowUnmutePrompt] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [showControls, setShowControls] = useState<boolean>(true);
   const [quality, setQuality] = useState<'4K Ultra HD' | '1080p HDR' | '720p'>('4K Ultra HD');
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Autoplay policy prevented unmuted sound
+        if (videoRef.current) {
+          videoRef.current.muted = true;
+          setIsMuted(true);
+          setShowUnmutePrompt(true);
+          videoRef.current.play().catch(() => {});
+        }
+      });
+    }
+  }, [content]);
+
+  const unmuteAndPlay = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      setIsMuted(false);
+      setShowUnmutePrompt(false);
+      videoRef.current.play().catch(() => {});
+    }
+  };
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -91,21 +115,47 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const isImage = 
+    content.category.includes('IMAGE') || 
+    /\.(jpg|jpeg|png|webp|svg|gif)$/i.test(content.videoUrl);
+
   return (
     <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-      {/* Video element */}
-      <video
-        ref={videoRef}
-        src={content.videoUrl}
-        autoPlay
-        playsInline
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={() => {
-          if (videoRef.current) setDuration(videoRef.current.duration);
-        }}
-        onClick={togglePlay}
-        className="w-full h-full object-contain cursor-pointer"
-      />
+      {/* Media element: Video or Image */}
+      {isImage ? (
+        <div className="relative w-full h-full flex items-center justify-center p-4">
+          <img
+            src={content.videoUrl}
+            alt={content.title}
+            className="max-w-full max-h-full object-contain shadow-2xl"
+          />
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          src={content.videoUrl}
+          autoPlay
+          playsInline
+          muted={isMuted}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={() => {
+            if (videoRef.current) setDuration(videoRef.current.duration);
+          }}
+          onClick={togglePlay}
+          className="w-full h-full object-contain cursor-pointer"
+        />
+      )}
+
+      {/* Unmute Prompt Overlay */}
+      {showUnmutePrompt && (
+        <button
+          onClick={unmuteAndPlay}
+          className="absolute top-24 right-6 z-40 flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-2xl backdrop-blur-md border border-blue-400/50 animate-bounce"
+        >
+          <VolumeX className="w-4 h-4 text-amber-300" />
+          <span>Click to Unmute Sound</span>
+        </button>
+      )}
 
       {/* Top Header Bar */}
       <div 

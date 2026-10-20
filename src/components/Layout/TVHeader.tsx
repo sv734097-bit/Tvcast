@@ -233,18 +233,21 @@ export const TVHeader: React.FC<TVHeaderProps> = ({
             </span>
           </button>
 
-          {/* Download & Install App Button */}
+          {/* Direct APK Download & Install Button */}
           <button
             onClick={() => {
               tvAudio.playSelect();
               onOpenDownloadModal();
             }}
-            title={language === 'hi' ? 'ऐप डाउनलोड व इंस्टॉल करें' : 'Download & Install App'}
-            className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md active:scale-95 transition-all"
+            title={language === 'hi' ? 'Android APK सीधे डाउनलोड करें' : 'Download Android APK directly'}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-lg shadow-emerald-950/40 border border-emerald-400/40 active:scale-95 transition-all group"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">
-              {language === 'hi' ? 'ऐप डाउनलोड करें' : 'Download App'}
+            <Download className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
+            <span className="font-['Outfit'] tracking-wide">
+              {language === 'hi' ? 'APK डाउनलोड करें' : 'Download APK'}
+            </span>
+            <span className="hidden sm:inline-block px-1.5 py-0.2 text-[9px] font-mono bg-black/40 rounded border border-white/20 text-emerald-200">
+              .apk
             </span>
           </button>
 

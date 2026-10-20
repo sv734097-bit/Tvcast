@@ -61,6 +61,20 @@ export const USBMediaHub: React.FC<USBMediaHubProps> = ({
       size: '620 MB',
       duration: '02:50',
       url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'
+    },
+    {
+      name: 'Family_Picnic_Sunset_4K.jpg',
+      type: 'image',
+      size: '8.4 MB',
+      duration: 'Photo 4K',
+      url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&auto=format&fit=crop&q=80'
+    },
+    {
+      name: 'Mountain_Trek_Himalayas.jpg',
+      type: 'image',
+      size: '12.1 MB',
+      duration: 'Photo 4K',
+      url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&auto=format&fit=crop&q=80'
     }
   ]);
 
@@ -232,6 +246,21 @@ export const USBMediaHub: React.FC<USBMediaHubProps> = ({
         >
           <Music className="w-3.5 h-3.5" />
           <span>{language === 'hi' ? 'गाने / ऑडियो' : 'Audio'}</span>
+        </button>
+
+        <button
+          onClick={() => {
+            tvAudio.playNav();
+            setActiveFilter('image');
+          }}
+          className={`px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${
+            activeFilter === 'image'
+              ? 'bg-blue-600 text-white font-bold shadow-md'
+              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          <ImageIcon className="w-3.5 h-3.5" />
+          <span>{language === 'hi' ? 'तस्वीरें / फोटो' : 'Photos'}</span>
         </button>
       </div>
 

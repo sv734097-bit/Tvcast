@@ -10,6 +10,7 @@ import {
   Music, 
   ShoppingBag, 
   Settings,
+  Globe,
   ArrowRight
 } from 'lucide-react';
 import { TVApp, LanguageMode } from '../../types/tv';
@@ -19,12 +20,14 @@ interface AppGridProps {
   apps: TVApp[];
   onLaunchApp: (app: TVApp) => void;
   language: LanguageMode;
+  focusedIndex?: number | null;
 }
 
 export const AppGrid: React.FC<AppGridProps> = ({
   apps,
   onLaunchApp,
-  language
+  language,
+  focusedIndex
 }) => {
   const getAppIcon = (iconName: string) => {
     const props = { className: 'w-7 h-7 text-white' };
@@ -49,6 +52,8 @@ export const AppGrid: React.FC<AppGridProps> = ({
         return <ShoppingBag {...props} className="w-8 h-8 text-cyan-400" />;
       case 'Settings':
         return <Settings {...props} className="w-8 h-8 text-slate-300" />;
+      case 'Globe':
+        return <Globe {...props} className="w-8 h-8 text-cyan-400" />;
       default:
         return <Tv {...props} />;
     }
@@ -69,16 +74,22 @@ export const AppGrid: React.FC<AppGridProps> = ({
 
       {/* Horizontal App Scrollable Dock */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-        {apps.map((app) => (
-          <button
-            key={app.id}
-            onClick={() => {
-              tvAudio.playSelect();
-              onLaunchApp(app);
-            }}
-            onMouseEnter={() => tvAudio.playNav()}
-            className="group relative flex flex-col items-start p-4 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 hover:border-slate-600 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-900/20 tv-card-focus focus:outline-none"
-          >
+        {apps.map((app, idx) => {
+          const isFocused = focusedIndex === idx;
+          return (
+            <button
+              key={app.id}
+              onClick={() => {
+                tvAudio.playSelect();
+                onLaunchApp(app);
+              }}
+              onMouseEnter={() => tvAudio.playNav()}
+              className={`group relative flex flex-col items-start p-4 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border text-left transition-all duration-200 tv-card-focus focus:outline-none ${
+                isFocused
+                  ? 'ring-4 ring-cyan-400 border-cyan-400 scale-105 shadow-[0_0_35px_rgba(34,211,238,0.7)] z-20 bg-slate-850'
+                  : 'border-slate-800 hover:border-slate-600 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-900/20'
+              }`}
+            >
             {/* Top row: Icon + optional badge */}
             <div className="w-full flex items-center justify-between mb-3">
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${app.bgGradient} flex items-center justify-center shadow-md p-2 group-hover:scale-110 transition-transform`}>
@@ -106,7 +117,8 @@ export const AppGrid: React.FC<AppGridProps> = ({
               <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </button>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

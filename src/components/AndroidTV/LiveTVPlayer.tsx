@@ -28,16 +28,31 @@ export const LiveTVPlayer: React.FC<LiveTVPlayerProps> = ({
 }) => {
   const [selectedChannel, setSelectedChannel] = useState<LiveChannel>(channels[0]);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(true); // start muted so browser allows autoplay!
   const [volume, setVolume] = useState<number>(0.8);
   const [showChannelBanner, setShowChannelBanner] = useState<boolean>(true);
+  const [videoLoadError, setVideoLoadError] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Auto-hide channel banner after 4s
   useEffect(() => {
     setShowChannelBanner(true);
+    setVideoLoadError(false);
     const timer = setTimeout(() => setShowChannelBanner(false), 4500);
     return () => clearTimeout(timer);
+  }, [selectedChannel]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Autoplay policy fallback: muted autoplay works everywhere
+        if (videoRef.current) {
+          videoRef.current.muted = true;
+          setIsMuted(true);
+          videoRef.current.play().catch(() => setVideoLoadError(true));
+        }
+      });
+    }
   }, [selectedChannel]);
 
   const togglePlay = () => {
@@ -86,15 +101,49 @@ export const LiveTVPlayer: React.FC<LiveTVPlayerProps> = ({
       <div className="relative flex-1 bg-black rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center min-h-[380px] lg:min-h-[500px] group">
         
         {/* Main Video Stream */}
-        <video
-          ref={videoRef}
-          src={selectedChannel.streamUrl}
-          autoPlay
-          loop
-          playsInline
-          muted={isMuted}
-          className="w-full h-full object-cover"
-        />
+        {!videoLoadError ? (
+          <video
+            ref={videoRef}
+            src={selectedChannel.streamUrl}
+            autoPlay
+            loop
+            playsInline
+            muted={isMuted}
+            onError={() => setVideoLoadError(true)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-radial from-blue-500/10 via-transparent to-transparent animate-pulse" />
+            <div 
+              className="w-20 h-20 rounded-3xl flex items-center justify-center text-white font-mono font-bold text-xl mb-4 shadow-2xl"
+              style={{ backgroundColor: selectedChannel.accentColor }}
+            >
+              {selectedChannel.logoText}
+            </div>
+            <h3 className="text-xl md:text-2xl font-bold text-white font-['Outfit']">
+              {selectedChannel.name}
+            </h3>
+            <p className="text-xs text-cyan-300 font-mono mt-1">
+              LIVE SATELLITE FEED · 1080p 60FPS
+            </p>
+            <div className="mt-4 flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-600/30 border border-red-500/50 text-red-300 text-xs font-bold animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-red-400" />
+              BROADCAST ACTIVE · {selectedChannel.currentShow}
+            </div>
+          </div>
+        )}
+
+        {/* Tap to Unmute Prompt if muted */}
+        {isMuted && (
+          <button
+            onClick={toggleMute}
+            className="absolute top-5 right-5 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 text-xs font-semibold backdrop-blur-md shadow-xl hover:scale-105 active:scale-95 transition-all"
+          >
+            <VolumeX className="w-3.5 h-3.5 text-amber-400" />
+            <span>Tap to Unmute Audio</span>
+          </button>
+        )}
 
         {/* Live Broadcast Watermark Top Left */}
         <div className="absolute top-5 left-5 z-20 flex items-center gap-2">

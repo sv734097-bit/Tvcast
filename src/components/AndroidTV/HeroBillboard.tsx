@@ -7,12 +7,14 @@ interface HeroBillboardProps {
   content: ContentItem;
   onPlay: (content: ContentItem) => void;
   language: LanguageMode;
+  focusedButton?: 'play' | 'details' | null;
 }
 
 export const HeroBillboard: React.FC<HeroBillboardProps> = ({
   content,
   onPlay,
-  language
+  language,
+  focusedButton
 }) => {
   const [isPlayingPreview, setIsPlayingPreview] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(true);
@@ -98,7 +100,11 @@ export const HeroBillboard: React.FC<HeroBillboardProps> = ({
               tvAudio.playSelect();
               onPlay(content);
             }}
-            className="flex items-center gap-2.5 px-6 py-3 bg-white text-slate-950 font-bold text-sm rounded-xl hover:bg-slate-200 transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-white/10 tv-card-focus"
+            className={`flex items-center gap-2.5 px-6 py-3 bg-white text-slate-950 font-bold text-sm rounded-xl hover:bg-slate-200 transition-all transform active:scale-95 shadow-xl shadow-white/10 tv-card-focus ${
+              focusedButton === 'play'
+                ? 'ring-4 ring-cyan-400 scale-105 shadow-[0_0_35px_rgba(34,211,238,0.8)] z-20'
+                : 'hover:scale-105'
+            }`}
           >
             <Play className="w-4 h-4 fill-slate-950 text-slate-950" />
             <span>{language === 'hi' ? 'अभी चलाएं (Play)' : 'Play Movie'}</span>
@@ -109,7 +115,11 @@ export const HeroBillboard: React.FC<HeroBillboardProps> = ({
               tvAudio.playSelect();
               onPlay(content);
             }}
-            className="flex items-center gap-2 px-5 py-3 bg-slate-900/80 hover:bg-slate-800 text-white font-medium text-sm rounded-xl border border-slate-700/80 transition-all backdrop-blur-md hover:scale-105"
+            className={`flex items-center gap-2 px-5 py-3 bg-slate-900/80 hover:bg-slate-800 text-white font-medium text-sm rounded-xl border border-slate-700/80 transition-all backdrop-blur-md ${
+              focusedButton === 'details'
+                ? 'ring-4 ring-cyan-400 border-cyan-400 scale-105 shadow-[0_0_35px_rgba(34,211,238,0.8)] z-20 bg-slate-800'
+                : 'hover:scale-105'
+            }`}
           >
             <Info className="w-4 h-4 text-cyan-400" />
             <span>{language === 'hi' ? 'ट्रेलर व जानकारी' : 'Details & Trailer'}</span>

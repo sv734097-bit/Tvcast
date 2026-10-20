@@ -15,6 +15,14 @@ import { LiveTVPlayer } from './LiveTVPlayer';
 import { USBMediaHub } from './USBMediaHub';
 import { RetroTVGame } from './RetroTVGame';
 import { TVSettingsMenu } from './TVSettingsMenu';
+import { YouTubeTVModal } from './YouTubeTVModal';
+import { SpotifyTVModal } from './SpotifyTVModal';
+import { PlayStoreModal } from './PlayStoreModal';
+import { NetflixTVModal } from './NetflixTVModal';
+import { HotstarTVModal } from './HotstarTVModal';
+import { PrimeVideoModal } from './PrimeVideoModal';
+import { WebBrowserModal } from './WebBrowserModal';
+import { VirtualTVRemote } from './VirtualTVRemote';
 import { 
   TV_APPS, 
   FEATURED_HERO, 
@@ -34,7 +42,10 @@ interface TVHomeProps {
   onToggleUsb: () => void;
   onOpenVoiceAssistant: () => void;
   remoteCommand?: string | null;
+  onRemoteCommand?: (command: string) => void;
   onOpenUSBGuide: () => void;
+  activeAppModal?: 'youtube' | 'spotify' | 'play_store' | 'game' | 'netflix' | 'hotstar' | 'prime' | 'browser' | null;
+  onActiveAppModalChange?: (modal: 'youtube' | 'spotify' | 'play_store' | 'game' | 'netflix' | 'hotstar' | 'prime' | 'browser' | null) => void;
 }
 
 export const TVHome: React.FC<TVHomeProps> = ({
@@ -47,9 +58,35 @@ export const TVHome: React.FC<TVHomeProps> = ({
   onToggleUsb,
   onOpenVoiceAssistant,
   remoteCommand,
-  onOpenUSBGuide
+  onRemoteCommand,
+  onOpenUSBGuide,
+  activeAppModal: propActiveAppModal,
+  onActiveAppModalChange
 }) => {
-  const [isPlayingGame, setIsPlayingGame] = useState<boolean>(false);
+  // Modal states for functional apps (supports controlled from App.tsx or internal)
+  const [internalActiveAppModal, setInternalActiveAppModal] = useState<'youtube' | 'spotify' | 'play_store' | 'game' | 'netflix' | 'hotstar' | 'prime' | 'browser' | null>(null);
+  const activeAppModal = propActiveAppModal !== undefined ? propActiveAppModal : internalActiveAppModal;
+  const setActiveAppModal = (val: 'youtube' | 'spotify' | 'play_store' | 'game' | 'netflix' | 'hotstar' | 'prime' | 'browser' | null) => {
+    if (onActiveAppModalChange) {
+      onActiveAppModalChange(val);
+    } else {
+      setInternalActiveAppModal(val);
+    }
+  };
+
+  const [isVirtualRemoteOpen, setIsVirtualRemoteOpen] = useState<boolean>(false);
+  
+  // Dynamic apps list (starts with TV_APPS, user can install more from Play Store!)
+  const [appsList, setAppsList] = useState<TVApp[]>(TV_APPS);
+
+  // 2D Focus system for TV Remote D-Pad Navigation
+  // Row 0: Hero (Col 0 = Play, Col 1 = Details)
+  // Row 1: App Dock (Col 0..appsList.length - 1)
+  // Row 2: Trending Movies (Col 0..TRENDING_MOVIES.length - 1)
+  // Row 3: Top Shows (Col 0..TOP_SHOWS.length - 1)
+  const [focusedRow, setFocusedRow] = useState<number>(1);
+  const [focusedCol, setFocusedCol] = useState<number>(0);
+
   const [tvSettings, setTvSettings] = useState<TVSettings>({
     network: {
       wifiEnabled: true,
@@ -91,74 +128,172 @@ export const TVHome: React.FC<TVHomeProps> = ({
     language: language
   });
 
+  // Execute currently focused item
+  const activateFocusedItem = () => {
+    tvAudio.playSelect();
+    if (focusedRow === 0) {
+      onPlayContent(FEATURED_HERO);
+    } else if (focusedRow === 1) {
+      if (appsList[focusedCol]) {
+        handleAppLaunch(appsList[focusedCol]);
+      }
+    } else if (focusedRow === 2) {
+      if (TRENDING_MOVIES[focusedCol]) {
+        onPlayContent(TRENDING_MOVIES[focusedCol]);
+      }
+    } else if (focusedRow === 3) {
+      if (TOP_SHOWS[focusedCol]) {
+        onPlayContent(TOP_SHOWS[focusedCol]);
+      }
+    }
+  };
+
+  // D-Pad Navigation Engine (Used by both Remote Controller and Keyboard Arrow Keys)
+  const handleNavDirection = (direction: 'up' | 'down' | 'left' | 'right') => {
+    tvAudio.playNav();
+
+    if (direction === 'up') {
+      setFocusedRow(prev => Math.max(0, prev - 1));
+      setFocusedCol(0);
+    } else if (direction === 'down') {
+      setFocusedRow(prev => Math.min(3, prev + 1));
+      setFocusedCol(0);
+    } else if (direction === 'left') {
+      setFocusedCol(prev => Math.max(0, prev - 1));
+    } else if (direction === 'right') {
+      setFocusedCol(prev => {
+        let maxCols = 2;
+        if (focusedRow === 1) maxCols = appsList.length;
+        if (focusedRow === 2) maxCols = TRENDING_MOVIES.length;
+        if (focusedRow === 3) maxCols = TOP_SHOWS.length;
+        return Math.min(maxCols - 1, prev + 1);
+      });
+    }
+  };
+
   // Handle Remote commands
   useEffect(() => {
     if (!remoteCommand) return;
-    if (remoteCommand === 'home') {
-      setIsPlayingGame(false);
+
+    if (remoteCommand === 'up') {
+      handleNavDirection('up');
+    } else if (remoteCommand === 'down') {
+      handleNavDirection('down');
+    } else if (remoteCommand === 'left') {
+      handleNavDirection('left');
+    } else if (remoteCommand === 'right') {
+      handleNavDirection('right');
+    } else if (remoteCommand === 'ok' || remoteCommand === 'select') {
+      activateFocusedItem();
+    } else if (remoteCommand === 'home') {
+      setActiveAppModal(null);
       onTabChange('home');
     } else if (remoteCommand === 'live') {
-      setIsPlayingGame(false);
+      setActiveAppModal(null);
       onTabChange('live');
     } else if (remoteCommand === 'mic') {
       onOpenVoiceAssistant();
     } else if (remoteCommand === 'app_youtube') {
-      handleAppLaunch(TV_APPS[0]);
+      setActiveAppModal('youtube');
     } else if (remoteCommand === 'app_netflix') {
-      handleAppLaunch(TV_APPS[2]);
+      setActiveAppModal('netflix');
     } else if (remoteCommand === 'app_hotstar') {
-      handleAppLaunch(TV_APPS[4]);
+      setActiveAppModal('hotstar');
     } else if (remoteCommand === 'app_prime') {
-      handleAppLaunch(TV_APPS[3]);
+      setActiveAppModal('prime');
+    } else if (remoteCommand === 'app_browser') {
+      setActiveAppModal('browser');
     }
   }, [remoteCommand]);
 
-  // Keyboard navigation for TV remote simulation (Arrow keys, Enter, Esc)
+  // Keyboard navigation for TV remote simulation (Arrow keys, Enter, Esc, Space)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if typing in an input
+      // Don't trigger if user is typing in an input
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
 
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        tvAudio.playNav();
-      }
-
-      if (e.key === 'h' || e.key === 'H') {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        handleNavDirection('up');
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        handleNavDirection('down');
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handleNavDirection('left');
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNavDirection('right');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        activateFocusedItem();
+      } else if (e.key === 'h' || e.key === 'H') {
+        setActiveAppModal(null);
         onTabChange('home');
-      }
-
-      if (e.key === 'Escape' && isPlayingGame) {
-        setIsPlayingGame(false);
+      } else if (e.key === 'Escape') {
+        if (activeAppModal) {
+          setActiveAppModal(null);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlayingGame]);
+  }, [focusedRow, focusedCol, appsList, activeAppModal]);
 
+  // Handle launch of every single app with real working feature
   const handleAppLaunch = (app: TVApp) => {
     tvAudio.playSelect();
-    if (app.id === 'live_tv') {
-      setIsPlayingGame(false);
+    
+    if (app.id === 'youtube') {
+      // Open REAL YouTube TV Player
+      setActiveAppModal('youtube');
+    } else if (app.id === 'spotify') {
+      // Open REAL Spotify Music Player with Equalizer
+      setActiveAppModal('spotify');
+    } else if (app.id === 'play_store') {
+      // Open REAL Google Play Store for Android TV
+      setActiveAppModal('play_store');
+    } else if (app.id === 'retro_game') {
+      // Launch TV Arcade Game
+      setActiveAppModal('game');
+    } else if (app.id === 'live_tv') {
+      // Switch to Live TV channels
+      setActiveAppModal(null);
       onTabChange('live');
     } else if (app.id === 'usb_hub') {
-      setIsPlayingGame(false);
+      // Switch to USB Media Player
+      setActiveAppModal(null);
       onTabChange('usb');
-    } else if (app.id === 'retro_game') {
-      setIsPlayingGame(true);
     } else if (app.id === 'settings') {
-      setIsPlayingGame(false);
+      // Switch to TV Settings
+      setActiveAppModal(null);
       onTabChange('settings');
+    } else if (app.id === 'netflix') {
+      setActiveAppModal('netflix');
+    } else if (app.id === 'hotstar') {
+      setActiveAppModal('hotstar');
+    } else if (app.id === 'prime') {
+      setActiveAppModal('prime');
+    } else if (app.id === 'browser') {
+      setActiveAppModal('browser');
     } else {
-      // Launch streaming player with top movie
+      // Dynamic newly installed app from Play Store
       onPlayContent({
         ...FEATURED_HERO,
-        title: `${app.name} · Featured Stream`,
-        category: `${app.name} Exclusive 4K`
+        title: app.name + ' · Launched',
+        category: app.description
       });
     }
+  };
+
+  const handleInstallNewApp = (newApp: TVApp) => {
+    setAppsList(prev => {
+      if (prev.find(a => a.id === newApp.id)) return prev;
+      return [...prev, newApp];
+    });
   };
 
   const handlePlayUSBMedia = (file: USBFile) => {
@@ -170,23 +305,11 @@ export const TVHome: React.FC<TVHomeProps> = ({
       duration: file.duration || '04:00',
       year: 2026,
       genre: ['Phone Media', 'Direct USB Playback'],
-      description: `Streaming directly from smartphone internal storage over USB DisplayPort connection. File size: ${file.size}.`,
+      description: `Streaming directly from smartphone internal storage over USB connection. File size: ${file.size}.`,
       videoUrl: file.url,
       thumbnailGradient: 'from-amber-900 to-slate-950'
     });
   };
-
-  // If playing retro TV game
-  if (isPlayingGame) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <RetroTVGame 
-          onClose={() => setIsPlayingGame(false)} 
-          remoteCommand={remoteCommand}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-6">
@@ -199,6 +322,7 @@ export const TVHome: React.FC<TVHomeProps> = ({
             content={FEATURED_HERO}
             onPlay={onPlayContent}
             language={language}
+            focusedButton={focusedRow === 0 ? (focusedCol === 0 ? 'play' : 'details') : null}
           />
 
           {/* Quick Notice Banner on how USB converted the TV */}
@@ -213,8 +337,8 @@ export const TVHome: React.FC<TVHomeProps> = ({
                 </h4>
                 <p className="text-xs text-slate-400">
                   {language === 'hi' 
-                    ? 'मोबाइल USB/HDMI से कनेक्टेड है। किसी फायर स्टिक या सेटअप बॉक्स की जरूरत नहीं!' 
-                    : 'Powered by your smartphone over USB. Use your phone as the remote controller.'}
+                    ? 'D-Pad कीबोर्ड (↑ ↓ ← →) या फोन रिमोट से किसी भी ऐप या फिल्म पर जाएं और Enter दबाएं।' 
+                    : 'Use Remote D-Pad (Up, Down, Left, Right) or Arrow keys to navigate and press OK to launch.'}
                 </p>
               </div>
             </div>
@@ -230,27 +354,30 @@ export const TVHome: React.FC<TVHomeProps> = ({
             </button>
           </div>
 
-          {/* Apps Shelf */}
+          {/* Apps Shelf (With real D-Pad focus ring) */}
           <AppGrid
-            apps={TV_APPS}
+            apps={appsList}
             onLaunchApp={handleAppLaunch}
             language={language}
+            focusedIndex={focusedRow === 1 ? focusedCol : null}
           />
 
-          {/* Trending Blockbuster Movies Row */}
+          {/* Trending Blockbuster Movies Row (With real D-Pad focus ring) */}
           <ContentRow
             title={language === 'hi' ? 'ट्रेंडिंग ब्लॉकबस्टर फिल्में' : 'Trending Blockbuster Movies'}
             subtitle={language === 'hi' ? '4K Ultra HD में उपलब्ध' : 'Available in 4K Ultra HD & Dolby Atmos'}
             items={TRENDING_MOVIES}
             onSelect={onPlayContent}
+            focusedIndex={focusedRow === 2 ? focusedCol : null}
           />
 
-          {/* Popular TV Shows Row */}
+          {/* Popular TV Shows Row (With real D-Pad focus ring) */}
           <ContentRow
             title={language === 'hi' ? 'टॉप वेब सीरीज व शो' : 'Top TV Shows & Series'}
             subtitle={language === 'hi' ? 'पूरी सीरीज बिंज-वॉच करें' : 'Binge-watch all seasons in HDR'}
             items={TOP_SHOWS}
             onSelect={onPlayContent}
+            focusedIndex={focusedRow === 3 ? focusedCol : null}
           />
         </>
       )}
@@ -289,7 +416,7 @@ export const TVHome: React.FC<TVHomeProps> = ({
       {currentTab === 'apps' && (
         <div className="space-y-6">
           <AppGrid
-            apps={TV_APPS}
+            apps={appsList}
             onLaunchApp={handleAppLaunch}
             language={language}
           />
@@ -316,6 +443,89 @@ export const TVHome: React.FC<TVHomeProps> = ({
           onBackToHome={() => onTabChange('home')}
         />
       )}
+
+      {/* REAL WORKING YOUTUBE TV MODAL */}
+      {activeAppModal === 'youtube' && (
+        <YouTubeTVModal
+          onClose={() => setActiveAppModal(null)}
+          language={language}
+        />
+      )}
+
+      {/* REAL WORKING SPOTIFY TV MODAL */}
+      {activeAppModal === 'spotify' && (
+        <SpotifyTVModal
+          onClose={() => setActiveAppModal(null)}
+          language={language}
+        />
+      )}
+
+      {/* REAL WORKING GOOGLE PLAY STORE FOR ANDROID TV */}
+      {activeAppModal === 'play_store' && (
+        <PlayStoreModal
+          onClose={() => setActiveAppModal(null)}
+          onInstallApp={handleInstallNewApp}
+          installedAppIds={appsList.map(a => a.id)}
+          language={language}
+        />
+      )}
+
+      {/* REAL WORKING ARCADE TV GAME */}
+      {activeAppModal === 'game' && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+          <RetroTVGame
+            onClose={() => setActiveAppModal(null)}
+            remoteCommand={remoteCommand}
+          />
+        </div>
+      )}
+
+      {/* REAL WORKING NETFLIX TV MODAL */}
+      {activeAppModal === 'netflix' && (
+        <NetflixTVModal
+          onClose={() => setActiveAppModal(null)}
+          language={language}
+          onPlayContent={onPlayContent}
+        />
+      )}
+
+      {/* REAL WORKING JIOHOTSTAR TV MODAL */}
+      {activeAppModal === 'hotstar' && (
+        <HotstarTVModal
+          onClose={() => setActiveAppModal(null)}
+          language={language}
+          onPlayContent={onPlayContent}
+        />
+      )}
+
+      {/* REAL WORKING PRIME VIDEO MODAL */}
+      {activeAppModal === 'prime' && (
+        <PrimeVideoModal
+          onClose={() => setActiveAppModal(null)}
+          language={language}
+          onPlayContent={onPlayContent}
+        />
+      )}
+
+      {/* REAL WORKING CHROME TV WEB BROWSER */}
+      {activeAppModal === 'browser' && (
+        <WebBrowserModal
+          onClose={() => setActiveAppModal(null)}
+          language={language}
+        />
+      )}
+
+      {/* ON-SCREEN VIRTUAL ANDROID TV REMOTE */}
+      <VirtualTVRemote
+        isOpen={isVirtualRemoteOpen}
+        onToggle={() => setIsVirtualRemoteOpen(!isVirtualRemoteOpen)}
+        onCommand={(cmd) => {
+          if (onRemoteCommand) {
+            onRemoteCommand(cmd);
+          }
+        }}
+        language={language}
+      />
 
     </div>
   );

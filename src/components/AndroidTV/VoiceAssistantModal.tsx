@@ -80,38 +80,84 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     };
   }, [isListening, language]);
 
+  const speakResponse = (msg: string) => {
+    try {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(msg);
+        utterance.lang = language === 'hi' ? 'hi-IN' : 'en-US';
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch {}
+  };
+
   const handleCommandSubmit = (text: string) => {
     if (!text.trim()) return;
     tvAudio.playSelect();
     const query = text.toLowerCase();
 
     if (query.includes('youtube') || query.includes('यूट्यूब')) {
-      setAssistantResponse(language === 'hi' ? 'YouTube TV खोला जा रहा है...' : 'Launching YouTube TV...');
-      setTimeout(() => onExecuteCommand('youtube'), 800);
-    } else if (query.includes('live') || query.includes('लाइव') || query.includes('news') || query.includes('cricket')) {
-      setAssistantResponse(language === 'hi' ? 'लाइव टीवी चैनल्स शुरू किए जा रहे हैं...' : 'Switching to Live TV Channels...');
-      setTimeout(() => onExecuteCommand('live'), 800);
+      const resp = language === 'hi' ? 'YouTube TV खोला जा रहा है...' : 'Launching YouTube TV...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('youtube'), 900);
+    } else if (query.includes('netflix') || query.includes('नेटफ्लिक्स')) {
+      const resp = language === 'hi' ? 'Netflix 4K TV खोला जा रहा है...' : 'Opening Netflix 4K TV...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('netflix'), 900);
+    } else if (query.includes('hotstar') || query.includes('हॉटस्टार') || query.includes('cricket') || query.includes('क्रिकेट')) {
+      const resp = language === 'hi' ? 'JioHotstar लाइव क्रिकेट खोला जा रहा है...' : 'Opening JioHotstar Live Sports...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('hotstar'), 900);
+    } else if (query.includes('prime') || query.includes('प्राइम') || query.includes('amazon')) {
+      const resp = language === 'hi' ? 'Amazon Prime Video खोला जा रहा है...' : 'Opening Amazon Prime Video...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('prime'), 900);
+    } else if (query.includes('browser') || query.includes('chrome') || query.includes('इंटरनेट')) {
+      const resp = language === 'hi' ? 'Chrome TV ब्राउज़र खोला जा रहा है...' : 'Opening Chrome TV Browser...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('browser'), 900);
+    } else if (query.includes('live') || query.includes('लाइव') || query.includes('news')) {
+      const resp = language === 'hi' ? 'लाइव टीवी चैनल्स शुरू किए जा रहे हैं...' : 'Switching to Live TV Channels...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('live'), 900);
     } else if (query.includes('usb') || query.includes('phone') || query.includes('स्टोरेज') || query.includes('मीडिया')) {
-      setAssistantResponse(language === 'hi' ? 'फोन USB मीडिया हब खोला जा रहा है...' : 'Opening Phone USB Media Hub...');
-      setTimeout(() => onExecuteCommand('usb'), 800);
+      const resp = language === 'hi' ? 'फोन USB मीडिया हब खोला जा रहा है...' : 'Opening Phone USB Media Hub...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('usb'), 900);
     } else if (query.includes('game') || query.includes('गेम') || query.includes('space') || query.includes('खेल')) {
-      setAssistantResponse(language === 'hi' ? 'Android TV स्पेस गेम शुरू हो रहा है...' : 'Launching Space Defender TV Game...');
-      setTimeout(() => onExecuteCommand('game'), 800);
+      const resp = language === 'hi' ? 'Android TV स्पेस गेम शुरू हो रहा है...' : 'Launching Space Defender TV Game...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('game'), 900);
     } else if (query.includes('smart tv') || query.includes('guide') || query.includes('गाइड') || query.includes('नॉर्मल')) {
-      setAssistantResponse(language === 'hi' ? 'USB से TV कनेक्ट करने का पूरा गाइड खोला जा रहा है...' : 'Opening USB to Smart TV Setup Guide...');
-      setTimeout(() => onExecuteCommand('guide'), 800);
+      const resp = language === 'hi' ? 'USB से TV कनेक्ट करने का पूरा गाइड खोला जा रहा है...' : 'Opening USB to Smart TV Setup Guide...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('guide'), 900);
     } else if (query.includes('setting') || query.includes('सेटिंग') || query.includes('network') || query.includes('display')) {
-      setAssistantResponse(language === 'hi' ? 'Android TV सेटिंग्स मेनू खोला जा रहा है...' : 'Opening Android TV Settings Menu...');
-      setTimeout(() => onExecuteCommand('settings'), 800);
+      const resp = language === 'hi' ? 'Android TV सेटिंग्स मेनू खोला जा रहा है...' : 'Opening Android TV Settings Menu...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('settings'), 900);
     } else if (query.includes('download') || query.includes('डाउनलोड') || query.includes('install') || query.includes('इंस्टॉल')) {
-      setAssistantResponse(language === 'hi' ? 'ऐप डाउनलोड व इंस्टॉलेशन मेनू खोला जा रहा है...' : 'Opening Download & Installation Menu...');
-      setTimeout(() => onExecuteCommand('download'), 800);
+      const resp = language === 'hi' ? 'ऐप डाउनलोड व इंस्टॉलेशन मेनू खोला जा रहा है...' : 'Opening Download & Installation Menu...';
+      setAssistantResponse(resp);
+      speakResponse(resp);
+      setTimeout(() => onExecuteCommand('download'), 900);
     } else {
-      setAssistantResponse(
-        language === 'hi' 
-          ? `"${text}" के लिए Android TV पर खोज की जा रही है...` 
-          : `Searching Android TV catalog for "${text}"...`
-      );
+      const resp = language === 'hi' 
+        ? `"${text}" के लिए Android TV पर खोज की जा रही है...` 
+        : `Searching Android TV catalog for "${text}"...`;
+      setAssistantResponse(resp);
+      speakResponse(resp);
       setTimeout(() => onExecuteCommand('movies'), 900);
     }
   };
